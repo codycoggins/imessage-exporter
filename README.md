@@ -2,14 +2,37 @@
 
 A macOS CLI tool that exports iMessage conversations to plain text files with inline reply threading preserved. Designed to produce clean output you can share as context with an AI assistant.
 
+## Quick Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vishoo7/imessage-exporter/main/install.sh | bash
+```
+
+This clones the repo to `~/.imessage-exporter` and creates the `imessage-export` command. Then just run:
+
+```bash
+imessage-export
+```
+
+> **Important:** Your terminal app needs **Full Disk Access** to read iMessage data.
+> Grant it in: System Settings → Privacy & Security → Full Disk Access
+
+### Uninstall
+
+```bash
+bash ~/.imessage-exporter/uninstall.sh
+```
+
 ## Requirements
 
 - macOS (Apple Silicon or Intel)
 - Python 3.11+
-- **Full Disk Access** for your terminal app (System Settings → Privacy & Security → Full Disk Access)
+- **Full Disk Access** for your terminal app
 - No external dependencies — uses only the Python standard library
 
-## Setup
+## Manual Setup
+
+If you prefer not to use the installer:
 
 1. Clone or download this repo
 2. Grant Full Disk Access to your terminal (Terminal.app, iTerm2, Ghostty, etc.)
@@ -24,7 +47,7 @@ python3 imessage_export.py
 ### Interactive mode
 
 ```bash
-python3 imessage_export.py
+imessage-export
 ```
 
 Walks you through:
@@ -37,21 +60,21 @@ Walks you through:
 
 ```bash
 # List recent conversations
-python3 imessage_export.py --list
+imessage-export --list
 
 # Export a conversation by name or phone number
-python3 imessage_export.py --chat "Family Group Chat" --since 7d
-python3 imessage_export.py --chat "+15551234567" --since 3h
+imessage-export --chat "Family Group Chat" --since 7d
+imessage-export --chat "+15551234567" --since 3h
 
 # Custom date range
-python3 imessage_export.py --chat "+15551234567" --since 2024-01-01 --until 2024-01-31
+imessage-export --chat "+15551234567" --since 2024-01-01 --until 2024-01-31
 
 # Replace phone numbers with names in the output
-python3 imessage_export.py --chat "Family Group Chat" --since 7d \
+imessage-export --chat "Family Group Chat" --since 7d \
   --names "+15551234567=Alice" "+15559876543=Bob"
 
 # Specify output file
-python3 imessage_export.py --chat "Family Group Chat" --since 7d -o chat.txt
+imessage-export --chat "Family Group Chat" --since 7d -o chat.txt
 ```
 
 ### Duration formats
