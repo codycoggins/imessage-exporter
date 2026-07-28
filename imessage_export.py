@@ -106,17 +106,22 @@ def extract_text_from_attributed_body(blob: bytes) -> str | None:
     if pos >= len(blob):
         return None
 
-    # Read length
+    # Read the byte length. Values under 0x80 are stored directly; larger ones
+    # use a marker byte naming the width of the length that follows. The marker
+    # is NOT a byte count — 0x81 means two bytes, not one — and treating it as
+    # one silently truncated every message longer than 127 bytes.
+    WIDTH_MARKERS = {0x81: 2, 0x82: 4, 0x83: 8}
+
     length_byte = blob[pos]
     pos += 1
     if length_byte < 0x80:
         text_len = length_byte
     else:
-        num_extra = length_byte & 0x7F
-        if pos + num_extra > len(blob):
+        width = WIDTH_MARKERS.get(length_byte)
+        if width is None or pos + width > len(blob):
             return None
-        text_len = int.from_bytes(blob[pos : pos + num_extra], "little")
-        pos += num_extra
+        text_len = int.from_bytes(blob[pos : pos + width], "little")
+        pos += width
 
     if pos + text_len > len(blob):
         return None

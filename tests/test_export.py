@@ -77,6 +77,63 @@ def test_attachment_grouping():
     assert f([]) == ""
 
 
+# --- attributedBody parsing -------------------------------------------------
+
+def make_blob(text: str) -> bytes:
+    """Build a minimal typedstream blob carrying `text`, the way iMessage does."""
+    payload = text.encode("utf-8")
+    n = len(payload)
+    if n < 0x80:
+        length = bytes([n])
+    elif n <= 0xFFFF:
+        length = b"\x81" + n.to_bytes(2, "little")
+    elif n <= 0xFFFFFFFF:
+        length = b"\x82" + n.to_bytes(4, "little")
+    else:
+        length = b"\x83" + n.to_bytes(8, "little")
+    return b"\x04\x0bstreamtyped" + b"NSString" + b"\x01\x94\x84\x01+" + length + payload
+
+
+@case
+def test_attributed_body_short_text():
+    text = "short message"
+    assert m.extract_text_from_attributed_body(make_blob(text)) == text
+
+
+@case
+def test_attributed_body_long_text_not_truncated():
+    """Messages over 127 bytes used to be cut short by a misread length."""
+    text = "A" * 401
+    assert m.extract_text_from_attributed_body(make_blob(text)) == text
+
+
+@case
+def test_attributed_body_boundary_lengths():
+    for n in (126, 127, 128, 129, 255, 256, 257, 400, 65535, 65536, 70000):
+        text = "x" * n
+        got = m.extract_text_from_attributed_body(make_blob(text))
+        assert got == text, f"length {n}: got {len(got) if got else got} chars"
+
+
+@case
+def test_attributed_body_multiline_and_unicode():
+    text = "line one\n\nline two — with em dash and emoji 🙄\n\nline three"
+    assert m.extract_text_from_attributed_body(make_blob(text)) == text
+
+
+@case
+def test_attributed_body_multibyte_length_is_bytes_not_chars():
+    """Length is a byte count; multi-byte characters must not shift the end."""
+    text = "é" * 200  # 400 bytes, 200 characters
+    assert m.extract_text_from_attributed_body(make_blob(text)) == text
+
+
+@case
+def test_attributed_body_truncated_blob_returns_none():
+    blob = make_blob("y" * 300)[:-100]
+    assert m.extract_text_from_attributed_body(blob) is None
+
+
 # --- tapbacks ---------------------------------------------------------------
 
 @case
